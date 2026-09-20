@@ -17,12 +17,10 @@ public class MainActivity extends Activity {
     private ValueCallback<Uri[]> uploadMessage;
     private final static int FILECHOOSER_RESULTCODE = 100;
 
-    @Override 
-    public void onCreate(Bundle savedInstanceState) {
+    @Override public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         requestWindowFeature(Window.FEATURE_NO_TITLE);
         getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
-        
         webView = new WebView(this);
         WebSettings s = webView.getSettings();
         s.setJavaScriptEnabled(true);
@@ -32,10 +30,10 @@ public class MainActivity extends Activity {
         s.setBuiltInZoomControls(false);
         s.setDisplayZoomControls(false);
         s.setMediaPlaybackRequiresUserGesture(false);
-        
+
         webView.setWebViewClient(new WebViewClient());
-        
-        // Naya WebChromeClient code file upload handle karne ke liye
+
+        // Ye naya code gallery open karne ke liye hai
         webView.setWebChromeClient(new WebChromeClient() {
             @Override
             public boolean onShowFileChooser(WebView webView, ValueCallback<Uri[]> filePathCallback, FileChooserParams fileChooserParams) {
@@ -55,13 +53,13 @@ public class MainActivity extends Activity {
                 return true;
             }
         });
-        
+
         webView.setOverScrollMode(WebView.OVER_SCROLL_NEVER);
         setContentView(webView);
         webView.loadUrl("file:///android_asset/index.html");
     }
 
-    // Activity result handle karne ke liye jisse selected file WebView me jaye
+    // Ye code select ki gayi photo ko wapas map me bhejega
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == FILECHOOSER_RESULTCODE) {
@@ -73,12 +71,7 @@ public class MainActivity extends Activity {
         }
     }
 
-    @Override 
-    public void onBackPressed() {
-        if (webView != null && webView.canGoBack()) {
-            webView.goBack(); 
-        } else {
-            super.onBackPressed();
-        }
+    @Override public void onBackPressed() {
+        if (webView != null && webView.canGoBack()) webView.goBack(); else super.onBackPressed();
     }
 }
