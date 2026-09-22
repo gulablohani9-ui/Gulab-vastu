@@ -3,6 +3,8 @@ package com.gulab.vastuchakra;
 import android.app.Activity;
 import android.os.Bundle;
 import android.webkit.WebChromeClient;
+import android.webkit.ValueCallback;
+import android.webkit.WebChromeClient.FileChooserParams;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
@@ -11,6 +13,7 @@ import android.view.WindowManager;
 import android.webkit.JavascriptInterface;
 import android.util.Base64;
 import android.content.Intent;
+import android.provider.MediaStore;
 import android.net.Uri;
 import androidx.core.content.FileProvider;
 import java.io.File;
@@ -21,6 +24,8 @@ import java.util.List;
 
 public class MainActivity extends Activity {
     private WebView webView;
+    private ValueCallback<Uri[]> filePathCallback;
+    private static final int FILE_CHOOSER_REQUEST = 1001;
 
     @Override public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -36,7 +41,30 @@ public class MainActivity extends Activity {
         s.setDisplayZoomControls(false);
         s.setMediaPlaybackRequiresUserGesture(false);
         webView.setWebViewClient(new WebViewClient());
-        webView.setWebChromeClient(new WebChromeClient());
+        webView.setWebChromeClient(new WebChromeClient() {
+            @Override
+            public boolean onShowFileChooser(WebView view, ValueCallback<Uri[]> callback, FileChooserParams params) {
+                if (filePathCallback != null) filePathCallback.onReceiveValue(null);
+                filePathCallback = callback;
+                try {
+                    Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+                    intent.setType("image/*");
+                    startActivityForResult(intent, FILE_CHOOSER_REQUEST);
+                    return true;
+                } catch (Exception e) {
+                    try {
+                        Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+                        intent.addCategory(Intent.CATEGORY_OPENABLE);
+                        intent.setType("image/*");
+                        startActivityForResult(intent, FILE_CHOOSER_REQUEST);
+                        return true;
+                    } catch (Exception ignored) {
+                        filePathCallback = null;
+                        return false;
+                    }
+                }
+            }
+        });
         webView.setOverScrollMode(WebView.OVER_SCROLL_NEVER);
         webView.addJavascriptInterface(new SaveBridge(), "AndroidSave");
         setContentView(webView);
@@ -94,6 +122,21 @@ public class MainActivity extends Activity {
                 i.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_ACTIVITY_NEW_TASK);
                 startActivity(i);
             } catch (Exception ignored) {}
+        }
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == FILE_CHOOSER_REQUEST) {
+            if (filePathCallback != null) {
+                Uri[] results = null;
+                if (resultCode == RESULT_OK && data != null && data.getData() != null) {
+                    results = new Uri[]{data.getData()};
+                }
+                filePathCallback.onReceiveValue(results);
+                filePathCallback = null;
+            }
         }
     }
 
